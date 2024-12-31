@@ -1,6 +1,6 @@
 # Humanity Protocol 脚本
 
-点击注册➡️ testnet.humanity.org/login?ref=xuegaozs
+[点击注册➡](https://testnet.humanity.org/login?ref=xuegaozs)
 
 ## 介绍
 脚本每天自动 Humanity Protocol 签到领取 $RWT 奖励。
