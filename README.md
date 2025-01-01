@@ -34,7 +34,7 @@ private_key_2
 private_key_3
 ...
 ```
-2025.1.1更新，增加了代理功能
+### 2025.1.1更新，增加了代理功能
 格式 
 ```bash
 http://user:password@ip:port
