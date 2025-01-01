@@ -44,5 +44,5 @@ pip install -r requirements.txt
 ### 5. 运行脚本
 
 ```bash
-python3 bot.py
+python3 main.py
 ```
