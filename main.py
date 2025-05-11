@@ -46,7 +46,8 @@ class HumanityProtocolBot:
         ]
         # 從環境變數獲取last_run_file路徑，如果未設置則使用默認值
         self.last_run_file = os.environ.get("LAST_RUN_FILE", "last_run_timestamp.json")
-        self.cooldown_period = 6 * 60 * 60  # 6小時的冷卻時間（秒）
+        self.cooldown_period = 6 * 60 * 60  # 正常冷卻時間為6小時（秒）
+        self.error_cooldown_period = 2 * 60 * 60  # 錯誤後的冷卻時間為2小時（秒）
 
     @staticmethod
     def current_time():
@@ -166,12 +167,14 @@ class HumanityProtocolBot:
 
             if (genesis_claimed and not claim_status) or (not genesis_claimed):
                 print(Fore.GREEN + f"正在為地址 {sender_address} 領取獎勵")
-                self.process_claim(sender_address, private_key, web3, contract)
+                return self.process_claim(sender_address, private_key, web3, contract)
             else:
                 print(Fore.YELLOW + f"地址 {sender_address} 當前紀元 {current_epoch} 的獎勵已領取")
+                return True  # 已領取視為成功
 
         except Exception as e:
             print(Fore.RED + f"處理地址 {sender_address} 時發生錯誤: {str(e)}")
+            return False
 
     def process_claim(self, sender_address, private_key, web3, contract):
         """處理領取獎勵的交易"""
@@ -195,9 +198,11 @@ class HumanityProtocolBot:
             tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
             print(Fore.GREEN + f"地址 {sender_address} 交易成功，交易哈希: {web3.to_hex(tx_hash)}")
+            return True
 
         except Exception as e:
             print(Fore.RED + f"處理地址 {sender_address} 的交易時發生錯誤: {str(e)}")
+            return False
 
     def run(self):
         """運行主循環"""
@@ -217,12 +222,16 @@ class HumanityProtocolBot:
                     # 加載賬號數據
                     accounts_data = self.load_accounts_data()
                     
+                    # 追蹤所有操作是否成功
+                    all_success = True
+                    
                     # 為每個賬號執行操作
                     for account in accounts_data:
                         # 為每個賬號建立獨立的連接
                         web3 = self.setup_blockchain_connection(account['proxy'])
                         if not web3:
                             print(Fore.RED + "連接失敗，跳過當前賬號...")
+                            all_success = False
                             continue
                         
                         # 設置合約
@@ -231,16 +240,26 @@ class HumanityProtocolBot:
                             abi=self.contract_abi
                         )
                         
-                        # 執行領取操作
-                        self.claim_rewards(account['private_key'], web3, contract)
+                        # 執行領取操作並追蹤結果
+                        claim_success = self.claim_rewards(account['private_key'], web3, contract)
+                        if not claim_success:
+                            all_success = False
                     
-                    # 保存當前執行時間
-                    self.save_last_run_timestamp(current_time)
-                    
-                    print(Fore.CYAN + f"{self.current_time()} 本輪領取完成，下次執行將在{self.cooldown_period // 3600}小時後")
-                else:
-                    # 計算還需等待的時間
-                    waiting_time = self.cooldown_period - time_since_last_run
+                    # 根據操作結果決定後續行為
+                    if all_success:
+                        # 如果所有操作都成功，則記錄時間並等待正常冷卻時間
+                        self.save_last_run_timestamp(current_time)
+                        print(Fore.GREEN + f"{self.current_time()} 本輪所有領取操作成功完成，下次執行將在{self.cooldown_period // 3600}小時後")
+                    else:
+                        # 如果有任何操作失敗，等待較短時間後重試
+                        print(Fore.YELLOW + f"{self.current_time()} 本輪存在失敗的領取操作，將在{self.error_cooldown_period // 3600}小時後重試")
+                        # 等待錯誤冷卻時間
+                        time.sleep(self.error_cooldown_period)
+                        continue  # 直接進入下一循環，不再顯示冷卻倒計時
+                
+                # 計算還需等待的時間
+                waiting_time = self.cooldown_period - time_since_last_run
+                if waiting_time > 0:
                     hours, remainder = divmod(waiting_time, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     
