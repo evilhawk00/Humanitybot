@@ -1,53 +1,100 @@
-# Humanity Protocol 脚本
+# Humanity Protocol 腳本 docker compose v2版本
+基於 https://github.com/GzGod/Humanitybot 修改
 
-[点击注册➡](https://testnet.humanity.org/login?ref=xuegaozs)
+## Docker部署方法
 
-## 介绍
-脚本每天自动 Humanity Protocol 签到领取 $RWT 奖励。
+使用Docker可以更方便地部署腳本，並確保重啟容器後不會重複執行操作。
 
-## 使用方法
+### 1. 準備配置文件
 
-按照以下步骤设置并运行脚本。
+確保已經創建並填寫好以下文件：
+- `private_keys.txt`：包含私鑰列表
+- `proxy.txt`（可選）：包含代理列表
 
-### 1. 克隆存储库
+### 2. 使用Docker Compose部署
 
-首先，使用 Git 将此存储库克隆到本地计算机：
-
-```bash
-git clone https://github.com/Gzgod/Humanitybot.git
-```
-
-### 2. 将目录更改为克隆文件夹
-
-导航到克隆存储库的文件夹：
+首先確保您已安裝Docker和Docker Compose，然後執行：
 
 ```bash
-cd Humanitybot
+# 構建並在後台啟動容器
+docker compose up -d
 ```
 
-### 3. 填写private_keys.txt
-将私钥填入private_keys.txt文件。该文件每行应包含一个私钥，如下所示：
-
-```python
-private_key_1
-private_key_2
-private_key_3
-...
-```
-### 2025.1.1更新，增加了代理功能
-格式 
-```bash
-http://user:password@ip:port
-```
-
-### 4. 安装依赖项
+### 3. 查看運行日誌
 
 ```bash
-pip install -r requirements.txt
+# 查看容器日誌
+docker logs -f humanity-bot
 ```
 
-### 5. 运行脚本
+### 4. 停止和重啟
 
 ```bash
-python3 main.py
+# 停止容器
+docker compose down
+
+# 重新啟動
+docker compose up -d
+```
+
+### 5. 數據持久化
+
+所有狀態數據都保存在名為`humanity_bot_data`的Docker卷中，確保重啟容器或服務器後不會重複執行操作。
+
+##部署說明
+
+在Ubuntu部署：
+
+1. 安裝Docker和Docker Compose
+
+```bash
+# 更新系統
+sudo apt update && sudo apt upgrade -y
+
+# 安裝所需依賴
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+
+# 添加Docker官方GPG密鑰
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# 設置Docker穩定版存儲庫
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 更新apt包索引
+sudo apt update
+
+# 安裝Docker Engine
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+
+# 將當前用戶添加到docker組（可選，避免使用sudo運行docker命令）
+sudo usermod -aG docker $USER
+
+# 安裝Docker Compose V2
+sudo apt install -y docker-compose-plugin
+```
+
+設置
+
+```bash
+
+# 創建並編輯private_keys.txt
+nano private_keys.txt
+# 添加您的私鑰，每行一個
+
+# 如需使用代理，創建並編輯proxy.txt（可選）
+nano proxy.txt
+# 添加您的代理，每行一個
+```
+
+部署和管理
+
+```bash
+# 啟動
+docker compose up -d
+
+# 查看日誌
+docker logs -f humanity-bot
+
+# 停止
+docker compose down
 ```

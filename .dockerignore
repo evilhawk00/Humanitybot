@@ -1,0 +1,30 @@
+# Git相關
+.git
+.gitignore
+
+# Docker相關
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# 私鑰和代理設置 (將通過卷掛載)
+private_keys.txt
+proxy.txt
+
+# 測試和臨時文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# 編輯器設置
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store 
